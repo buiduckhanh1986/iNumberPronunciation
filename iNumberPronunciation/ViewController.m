@@ -9,6 +9,9 @@
 #import "ViewController.h"
 
 @interface ViewController ()
+@property (weak, nonatomic) IBOutlet UITextField *txtYear;
+@property (weak, nonatomic) IBOutlet UITextField *txtDayOfYear;
+@property (weak, nonatomic) IBOutlet UILabel *lblResult;
 
 @end
 
@@ -18,25 +21,63 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
     
-    // Đây là dữ liệu test
-    int numbers[10] = {7, 11, 12, 17, 30, 53, 111, 2012, 1412, 503};
+    // Lấy năm hiện tại gán vào text box year
+    NSDateComponents *components = [[NSCalendar currentCalendar] components:NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear fromDate:[NSDate date]];
     
-    NSMutableArray * tmp = [NSMutableArray new];
+    [self.txtYear setText:[NSString stringWithFormat:@"%ld", (long)[components year]]];
+    [self onButtonResultTouchUpInside:nil];
     
-    for (int i = 0; i < sizeof(numbers)/sizeof(int); i++)
-        [tmp addObject:[self pronunciation:numbers[i]]];
-    
-    // Yêu cầu bài học là chuyển thành NSArray
-    NSArray * result = [NSArray arrayWithArray:tmp];
-    
-    // Hiển thị kết quả
-    for (int i = 0; i < result.count; i++)
-    {
-        printf("%4u : %s\n", numbers[i], [result[i] UTF8String]);
-    }
 }
 
 
+// Xử lý hiển thị thông tin ngày tháng năm
+- (IBAction)onButtonResultTouchUpInside:(id)sender {
+    int year = [_txtYear.text intValue];
+    int dayOfYear = [_txtDayOfYear.text intValue];
+    
+    
+    // Lấy thông tin ngày 01/01/năm lựa chọn
+    NSCalendar *calendar = [NSCalendar currentCalendar];
+    NSDateComponents *components = [[NSDateComponents alloc] init];
+    [components setDay:1];
+    [components setMonth:1];
+    [components setYear:year];
+    
+    // Cộng thêm Interval để ra ngày kết quả
+    NSDate *result = [NSDate dateWithTimeInterval:((dayOfYear - 1)*24*60*60)
+                                        sinceDate:[calendar dateFromComponents:components]];
+    
+    // Tạo date format tạo format string
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    NSLocale *locale = [[NSLocale alloc] initWithLocaleIdentifier:@"vi_VN_POSIX"];
+    [formatter setLocale:locale];
+    [formatter setDateFormat:@"dd/MM/y"];
+    
+    components = [[NSCalendar currentCalendar] components:NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear | NSCalendarUnitWeekOfYear | NSCalendarUnitWeekday fromDate:result];
+    
+    // Lấy ngày trong tuần theo chuẩn việt nam
+    NSString *weekday;
+    
+    switch([components weekday])
+    {
+        
+        case 2 : weekday = @"Thứ Hai"; break;
+        case 3 : weekday = @"Thứ Ba"; break;
+        case 4 : weekday = @"Thứ Tư"; break;
+        case 5 : weekday = @"Thứ Năm"; break;
+        case 6 : weekday = @"Thứ Sáu"; break;
+        case 7 : weekday = @"Thứ Bảy"; break;
+            
+        default: weekday = @"Chủ Nhật"; break;
+    }
+    
+    // Hiển thị kết quả
+    [self.lblResult setText:[NSString stringWithFormat:@"%@ Ngày %@ - Tuần Thứ %li", weekday, [formatter stringFromDate:result], (long)[components weekOfYear]]];
+    
+}
+
+
+// Hàm thực hiện phát âm 1 số Integer
 - (NSString *) pronunciation:(int) num
 {
     
